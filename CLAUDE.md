@@ -42,17 +42,17 @@ commercial use is allowed.
 
 ```
 origin  → https://github.com/dawnofcd/Aizen_agent.git   (PRIVATE — full source, day-to-day work)
-public  → https://github.com/dawnofcd/aizen.git         (PUBLIC — redirects to aizen-stack/aizen)
+public  → https://github.com/dawnofcd/aizen.git         (PUBLIC — redirects to rivyn-llc/aizen)
 ```
 
-- The **canonical public repo is `aizen-stack/aizen`** (an org). `dawnofcd/aizen` still resolves via
-  GitHub's redirect, but **write `aizen-stack/aizen` in all user-facing URLs, install scripts, and
+- The **canonical public repo is `rivyn-llc/aizen`** (an org). `dawnofcd/aizen` still resolves via
+  GitHub's redirect, but **write `rivyn-llc/aizen` in all user-facing URLs, install scripts, and
   code** so nothing depends on a redirect.
 - `dawnofcd/Aizen_agent` is private, so an anonymous fetch of it returns 404. That is expected — it
   is not a broken URL. **Never put it in user-facing docs**; the README used to tell people to
   `cargo install --git .../Aizen_agent`, which 404'd for everyone.
-- Release binaries are published to `aizen-stack/aizen`. `src/features/update.rs` has
-  `DEFAULT_REPO = "aizen-stack/aizen"` and `aizen update` reads releases from there — keep it aligned
+- Release binaries are published to `rivyn-llc/aizen`. `src/features/update.rs` has
+  `DEFAULT_REPO = "rivyn-llc/aizen"` and `aizen update` reads releases from there — keep it aligned
   with `install.ps1` (`$Repo`) and `install.sh` (`repo=`).
 - Never push to `main` on either remote without being asked. Branch, then push with `-u`.
 
@@ -89,7 +89,7 @@ background process, not a foreground shell call.
 
 Real numbers, not guesses — from the GitHub API:
 
-- `aizen-stack/aizen`: 25 stars, 4 forks, **0 watchers**, Discussions **off**.
+- `rivyn-llc/aizen`: 25 stars, 4 forks, **0 watchers**, Discussions **off**.
 - v0.5.5 downloads: Windows 3, Linux 0, macOS 0.
 - Windows `.exe` is **unsigned** → SmartScreen warns. macOS is **not notarized**.
 - Not published to winget / scoop / Homebrew / crates.io / AUR. Apache-2.0 now unblocks the OSI-only

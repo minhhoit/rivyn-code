@@ -379,7 +379,7 @@ mod tests {
             ),
             (
                 "Repo aizen_admin là monorepo chứa aizen-be và OmniRoute",
-                "Repo aizen public ở github.com/aizen-stack/aizen",
+                "Repo aizen public ở github.com/rivyn-llc/aizen",
             ),
         ];
         for (a, b) in pairs {

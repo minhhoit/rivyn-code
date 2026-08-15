@@ -1,14 +1,14 @@
 #!/bin/sh
 # Aizen installer for Linux and macOS.
 #
-#   curl -fsSL https://raw.githubusercontent.com/aizen-stack/aizen/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/rivyn-llc/aizen/main/install.sh | sh
 #
 # Downloads the latest optimized `aizen` binary from GitHub Releases into
 # ~/.aizen/bin (override with $AIZEN_INSTALL) and makes it executable.
 # Pure static binary — no toolchain, no Node/Python.
 set -eu
 
-repo="aizen-stack/aizen"
+repo="rivyn-llc/aizen"
 os="$(uname -s)"
 arch="$(uname -m)"
 
