@@ -38,6 +38,41 @@ mod retained;
 /// jitter (a few ms) yet far below the gap before a human reaches the Enter key (≥ ~100 ms).
 const PASTE_COALESCE_MS: u64 = 50;
 
+/// Opt-in raw-key diagnostics for input bugs that only reproduce with a live IME (Vietnamese Telex/
+/// VNI, CJK, etc.) — the paste-burst heuristic above was written against ONE IME's byte pattern
+/// (synthetic Backspace + composed char) and other IMEs (e.g. macOS's built-in Vietnamese source,
+/// which withholds keys during composition and delivers a commit with no Backspace at all) may hit
+/// it differently. Appends one line per key to `~/.aizen/debug-keys.log`; unset (the default) costs
+/// nothing beyond the env lookup. Mirrors `AIZEN_DEBUG_STREAM` in `llm/client.rs`.
+fn key_debug() -> bool {
+    std::env::var("AIZEN_DEBUG_KEYS")
+        .ok()
+        .map(|v| {
+            let v = v.trim().to_ascii_lowercase();
+            !v.is_empty() && v != "0" && v != "false" && v != "off" && v != "no"
+        })
+        .unwrap_or(false)
+}
+
+fn key_debug_log(key: &Key, is_ime_edit: bool, buffered: bool, in_paste_burst: bool) {
+    if !key_debug() {
+        return;
+    }
+    use std::io::Write as _;
+    let path = crate::core::config::aizen_home().join("debug-keys.log");
+    let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) else {
+        return;
+    };
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let _ = writeln!(
+        f,
+        "{ts} key={key:?} ime_edit={is_ime_edit} buffered={buffered} in_burst={in_paste_burst}"
+    );
+}
+
 /// Idle seconds before the screensaver card is raised (retained backend only). Reset by any key or
 /// mouse event; gated on !working and no open menu/overlay so it never fires mid-task or over a menu.
 const IDLE_SCREENSAVER_SECS: u64 = 15;
@@ -1985,6 +2020,7 @@ fn input_loop(
         // paste_just_ended: first keystroke outside the burst → repaint once to flush.
         let in_paste_burst = buffered && prev_buffered;
         let _paste_just_ended = !buffered && prev_buffered;
+        key_debug_log(&key, is_ime_edit, buffered, in_paste_burst);
         // If the agent is awaiting a per-action approval, THIS keystroke is the answer — route a
         // y/n/a decision to the blocked gate and never treat it as draft input. Other keys are
         // ignored so a stray press can't accidentally approve.
