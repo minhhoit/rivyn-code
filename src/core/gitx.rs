@@ -73,8 +73,7 @@ pub fn command() -> anyhow::Result<std::process::Command> {
     }
 }
 
-/// Apply `CREATE_NO_WINDOW` on Windows; a pass-through elsewhere. Centralizes the flag so every
-/// git spawn in this module (including the `--version` probe) gets it.
+#[allow(unused_mut)]
 fn no_window(mut cmd: std::process::Command) -> std::process::Command {
     #[cfg(windows)]
     {

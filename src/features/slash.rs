@@ -86,6 +86,26 @@ const BUILTINS: &[Builtin] = &[
         argument_hint: "",
     },
     Builtin {
+        name: "vibe",
+        description: "rapid vibe coding workflow & prototyping guide",
+        argument_hint: "[topic]",
+    },
+    Builtin {
+        name: "design",
+        description: "modern web UI/UX & generative UI design guide",
+        argument_hint: "[topic]",
+    },
+    Builtin {
+        name: "secure",
+        description: "security audit, hardening & RBAC playbook",
+        argument_hint: "[audit|auth|deps]",
+    },
+    Builtin {
+        name: "market",
+        description: "product launch, copywriting & sales playbook",
+        argument_hint: "[launch|copy|seo|sales]",
+    },
+    Builtin {
         name: "commands",
         description: "list custom markdown slash commands",
         argument_hint: "",
@@ -882,5 +902,25 @@ mod tests {
         assert!(looks_like_name("docker"));
         assert!(!looks_like_name("usr/bin/python"));
         assert!(!looks_like_name("c/Users/admin/Desktop"));
+    }
+
+    #[test]
+    fn expert_skills_slash_commands_classify_cleanly() {
+        assert!(matches!(
+            classify("/vibe"),
+            Verdict::Command { name, .. } if name == "vibe"
+        ));
+        assert!(matches!(
+            classify("/design modern-web-design"),
+            Verdict::Command { name, arg } if name == "design" && arg == "modern-web-design"
+        ));
+        assert!(matches!(
+            classify("/secure"),
+            Verdict::Command { name, .. } if name == "secure"
+        ));
+        assert!(matches!(
+            classify("/market gtm"),
+            Verdict::Command { name, arg } if name == "market" && arg == "gtm"
+        ));
     }
 }

@@ -1944,7 +1944,7 @@ fn input_line(state: &AppState, budget: usize) -> (String, usize) {
             c
         }
     };
-    let cellw = |c: char| console::measure_text_width(&disp(c).to_string()).max(1);
+    let cellw = |c: char| console::measure_text_width(&disp(c).to_string());
     // Budget for the text window shrinks by the paste prefix (e.g. `↵12 · `) so both fit on one row.
     let text_budget = budget.saturating_sub(prefix_w);
     let mut start = cursor;

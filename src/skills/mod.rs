@@ -24,6 +24,7 @@
 //! pulls the full body on demand via the `skill_load` tool, and may persist a new one via
 //! `skill_save`. Same anti-bloat posture as memory: the prompt carries only the index, not bodies.
 
+pub mod builtin;
 pub mod registry;
 
 use crate::core::config::aizen_home;
@@ -35,6 +36,8 @@ use std::path::PathBuf;
 /// Where a skill was found — decides index grouping (project-ish first) and delete targeting.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SkillOrigin {
+    /// Embedded default skills compiled into the binary.
+    Builtin,
     /// `~/.aizen/skills/*.md` — applies everywhere.
     Global,
     /// `~/.aizen/skills/p/<slug>/*.md` — the current workspace's zone.
@@ -224,8 +227,23 @@ pub fn list() -> Vec<Skill> {
     out
 }
 
+/// All skills including built-ins and custom workspace skills.
+#[allow(dead_code)]
+pub fn list_all() -> Vec<Skill> {
+    let mut by_name: BTreeMap<String, Skill> = BTreeMap::new();
+    for sk in builtin::list() {
+        by_name.insert(sanitize_name(&sk.name), sk);
+    }
+    for sk in list() {
+        by_name.insert(sanitize_name(&sk.name), sk);
+    }
+    let mut out: Vec<Skill> = by_name.into_values().collect();
+    out.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    out
+}
+
 /// Load one skill by name (exact, after slug normalization). Most-specific wins:
-/// repo → current project zone → global. `None` if absent everywhere visible.
+/// repo → current project zone → global → builtin. `None` if absent everywhere visible.
 pub fn load(name: &str) -> Option<Skill> {
     let file = format!("{}.md", sanitize_name(name));
     for (dir, origin) in [
@@ -245,7 +263,7 @@ pub fn load(name: &str) -> Option<Skill> {
             return Some(sk);
         }
     }
-    None
+    builtin::load(name)
 }
 
 /// Every skill in OTHER workspaces' zones, as `(zone-slug, skill)` — inspection/cleanup only

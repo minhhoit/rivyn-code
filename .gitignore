@@ -34,3 +34,8 @@ main_diff*.txt
 .audit-out/
 # local task-runner config for this checkout (machine-specific paths, not part of the build)
 .1devtool/
+
+# local indexing / helper tool caches
+.codegraph/
+.rtk/
+

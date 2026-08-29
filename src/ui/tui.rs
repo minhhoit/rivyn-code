@@ -31,13 +31,6 @@ use tokio::sync::oneshot;
 
 mod retained;
 
-/// A key whose `read_key()` returned within this many ms was ALREADY waiting in the OS input buffer
-/// → it arrived as part of a burst (a paste), not a deliberate human keystroke. Used so a newline
-/// *inside* a paste becomes a literal newline in the draft instead of submitting the line — the fix
-/// for a multi-line paste firing one message per line. Comfortably above buffered-read scheduling
-/// jitter (a few ms) yet far below the gap before a human reaches the Enter key (≥ ~100 ms).
-const PASTE_COALESCE_MS: u64 = 50;
-
 /// Opt-in raw-key diagnostics for input bugs that only reproduce with a live IME (Vietnamese Telex/
 /// VNI, CJK, etc.) — the paste-burst heuristic above was written against ONE IME's byte pattern
 /// (synthetic Backspace + composed char) and other IMEs (e.g. macOS's built-in Vietnamese source,
@@ -628,6 +621,20 @@ struct Render {
     text_overlay_lines: Vec<String>,
     /// Chat/slash submissions waiting while a turn runs (shown in the prompt placeholder).
     queued_count: usize,
+}
+
+impl Render {
+    fn normalize_draft(&mut self) {
+        let s: String = self.draft.iter().collect();
+        let normalizer = icu_normalizer::ComposingNormalizer::new_nfc();
+        let normalized = normalizer.normalize(&s);
+        if normalized.as_ref() != s {
+            let pre: String = self.draft.iter().take(self.cursor).collect();
+            let norm_pre = normalizer.normalize(&pre);
+            self.cursor = norm_pre.chars().count();
+            self.draft = normalized.chars().collect();
+        }
+    }
 }
 
 fn render() -> &'static Mutex<Render> {
@@ -1786,11 +1793,6 @@ fn input_loop(
     let mut history: Vec<String> = Vec::new();
     let mut hist_idx: Option<usize> = None;
     let mut draft_saved: Vec<char> = Vec::new();
-    // Arrival time of the PREVIOUS key, so we can measure the inter-key gap (below). `None` until the
-    // first key of the session.
-    let mut last_arrival: Option<Instant> = None;
-    // Arrival time TWO keys ago, for detecting paste burst end (when prev was buffered but current is not).
-    let mut last_arrival_prev: Option<Instant> = None;
     // Phase 3 mouse drag state (retained only). `selecting` tracks left-drag text selection;
     // `dragging_scrollbar` tracks thumb drag on the right gutter. Cleared on mouse-up / Esc.
     let mut selecting: Option<retained::SelectionRange> = None;
@@ -1821,13 +1823,14 @@ fn input_loop(
         }
     }
 
+    let _ = crossterm::terminal::enable_raw_mode();
+
     loop {
         // STAND DOWN while a `dialoguer` menu owns stdin. This is the whole fix for the input freeze:
         // the flag is set by `suspend()` itself, so it can't disagree with who actually holds the
         // terminal, and we spin on a short sleep instead of blocking on a resume signal — a menu that
         // exits by an unexpected path can never leave the keyboard wedged forever. Raw mode is dropped
-        // once on the parking edge so the menu's cooked mode survives (the re-assert below is what used
-        // to clobber it every iteration).
+        // once on the parking edge so the menu's cooked mode survives.
         if KEYBOARD_PARKED.load(Ordering::SeqCst) {
             let _ = crossterm::terminal::disable_raw_mode();
             // Tell `suspend()` the keyboard is genuinely out of the way. It blocks on this (with a
@@ -1841,17 +1844,10 @@ fn input_loop(
             // Drain resume pings buffered by the old park protocol so they can't unpark a later menu.
             while resume_rx.try_recv().is_ok() {}
             last_activity = Instant::now();
+            let _ = crossterm::terminal::enable_raw_mode();
         }
-        // Raw mode is required for crossterm's event reader (no line buffering / echo). Re-assert it
-        // every iteration: it's idempotent, and a slash command that parked us for a `dialoguer` menu
-        // flips stdin back to cooked mode (see `prepare_dialoguer_session`) — re-enabling here restores
-        // raw the moment we're unparked, without threading any state through the park/resume dance.
-        let _ = crossterm::terminal::enable_raw_mode();
-        // Read the next actionable key from crossterm's event stream. Non-key events are handled and
-        // skipped inline: on Windows the console delivers BOTH press AND release records, so we keep
-        // only `Press` (otherwise every key fires twice). With mouse capture on (retained): wheel
-        // scrolls the transcript; left-drag selects text (copy-on-release via arboard); the right
-        // gutter scrollbar is draggable. Shift+Enter inserts a literal newline into the draft.
+
+        // Read the next actionable key from crossterm's event stream.
         let key = loop {
             // Poll (not a bare blocking read) so the idle clock is checked on a ~1s cadence: after
             // IDLE_SCREENSAVER_SECS of no input — and only when quiescent (retained, not working, no
@@ -1867,9 +1863,6 @@ fn input_loop(
             if !have_event {
                 if !screensaver_up
                     && retained::is_active()
-                    // Same sixel gate as the startup card above. Without it this path fires every
-                    // 15 idle seconds on a terminal that cannot decode sixel — the startup blit was
-                    // gated but this one was not, so the freeze came back on a timer.
                     && crate::ui::splash::logo_is_sixel()
                     && !WORKING.load(Ordering::Relaxed)
                     && !APPROVAL_PENDING.load(Ordering::Relaxed)
@@ -1894,8 +1887,7 @@ fn input_loop(
                 }
             };
             // Any real event is activity: reset the idle clock, and if the screensaver is up, tear it
-            // down and SWALLOW this event so the wake keystroke never also edits the draft (mirrors the
-            // RETAINED_INFO_OVERLAY key-swallow below).
+            // down and SWALLOW this event so the wake keystroke never also edits the draft.
             last_activity = Instant::now();
             if screensaver_up {
                 retained::screensaver(None);
@@ -1903,6 +1895,23 @@ fn input_loop(
                 continue;
             }
             match ev {
+                Event::Paste(text) => {
+                    let mut r = render().lock().unwrap();
+                    let normalizer = icu_normalizer::ComposingNormalizer::new_nfc();
+                    let norm_text = normalizer.normalize(&text);
+                    let cur = r.cursor;
+                    let count = norm_text.chars().count();
+                    for (i, c) in norm_text.chars().enumerate() {
+                        r.draft.insert(cur + i, c);
+                    }
+                    r.cursor = cur + count;
+                    r.normalize_draft();
+                    r.palette_sel = 0;
+                    drop(r);
+                    hist_idx = None;
+                    repaint();
+                    continue;
+                }
                 Event::Key(ke) if ke.kind == KeyEventKind::Press => {
                     if ke.code == KeyCode::Enter && ke.modifiers.contains(KeyModifiers::SHIFT) {
                         let mut r = render().lock().unwrap();
@@ -1915,14 +1924,6 @@ fn input_loop(
                         repaint();
                         continue;
                     }
-                    // Alt+Enter (or Ctrl+Enter) = STEER: hand the draft to the RUNNING turn instead of
-                    // the post-turn queue, so "wait, also do X" reaches the agent mid-flight (it folds
-                    // the message in at its next step) instead of waiting for the turn to finish. Two
-                    // chords because Windows Terminal binds Alt+Enter to fullscreen by default and
-                    // swallows it before the app sees it; Ctrl+Enter is the fallback there (and the
-                    // `>` draft prefix below covers terminals that eat both). Idle, or a mailbox that
-                    // refuses (no live turn / backlog full / oversized), falls through to the normal
-                    // Enter path below so the keystroke is never silently swallowed.
                     if ke.code == KeyCode::Enter
                         && (ke.modifiers.contains(KeyModifiers::ALT)
                             || ke.modifiers.contains(KeyModifiers::CONTROL))
@@ -1942,23 +1943,12 @@ fn input_loop(
                             continue;
                         }
                     }
-                    // Esc with a live mouse selection clears the selection — but ONLY when there is no
-                    // turn to stop. Stopping the agent always outranks dropping a highlight.
-                    //
-                    // This branch used to consume Esc unconditionally, and `selecting` is only cleared
-                    // on a left-button RELEASE. Press inside the transcript and release anywhere the
-                    // terminal doesn't report (drag out of a small panel, focus lost mid-drag) and the
-                    // state stays `Some` for the rest of the session — from then on EVERY Esc was eaten
-                    // here and cancel never ran. Falling through while a turn is in flight (and clearing
-                    // the stale selection on the way) means a missed mouse-up can no longer disarm Esc.
                     if ke.code == KeyCode::Esc && selecting.is_some() {
                         selecting = None;
                         retained::clear_selection();
                         if !turn_in_flight() {
-                            continue; // idle: dropping the highlight is the whole action
+                            continue;
                         }
-                        // A turn IS running: the highlight is gone, but this Esc still has to reach
-                        // the cancel arm below, so don't consume it.
                     }
                     match crossterm_to_console_key(ke) {
                         Some(k) => break k,
@@ -1975,52 +1965,13 @@ fn input_loop(
                     );
                     continue;
                 }
-                // Release/Repeat key records, other mouse, resize, focus, paste → not actioned here.
                 _ => continue,
             }
         };
-        // Paste detection by INTER-KEY GAP. Windows Terminal delivers a paste as a burst of individual
-        // key events (crossterm has no bracketed-paste on Windows), so we infer a paste from how close
-        // successive key ARRIVALS are. Measuring the gap (not how long the read blocked) folds a slow
-        // repaint while the agent is WORKING into the gap, so a real keystroke (arrivals ≥ ~100 ms
-        // apart) is never mistaken for a paste (arrivals < 1 ms apart), regardless of how busy the turn
-        // is. Consumed only by the `Key::Enter if buffered` arm → a newline inside a paste becomes a
-        // literal `\n` instead of firing one message per line.
-        //
-        // IME FIX: When typing Vietnamese (Telex/VNI), Windows IME sends `Backspace` + new composed
-        // char within <50ms (e.g., `a` → backspace → `á`). Without filtering, this looks like a paste
-        // burst → the composed char's repaint is skipped → the char is hidden until next keystroke.
-        // A real paste never contains Backspace/Del, so reset `last_arrival` after seeing them to
-        // break the burst chain. The next char (IME-committed) arrives with no "prev" timestamp → not
-        // buffered → repaint happens immediately.
-        let now = Instant::now();
-        let is_ime_edit = matches!(key, Key::Backspace | Key::Del);
-        let buffered = if is_ime_edit {
-            false // Backspace/Del during IME composition are NOT part of a paste burst
-        } else {
-            last_arrival
-                .map(|t| now.duration_since(t) < Duration::from_millis(PASTE_COALESCE_MS))
-                .unwrap_or(false)
-        };
-        // Repaint throttle: during a paste burst, skip per-char repaint. Only redraw when the burst
-        // ends (first event that is NOT buffered after a buffered one). Without this, pasting 500 chars
-        // queues 500 retained::update_input calls → visible char-by-char lag. With it: one final repaint
-        // shows the complete pasted text instantly once the burst settles.
-        let prev_buffered = last_arrival
-            .and_then(|t| {
-                last_arrival_prev
-                    .map(|p| t.duration_since(p) < Duration::from_millis(PASTE_COALESCE_MS))
-            })
-            .unwrap_or(false);
-        last_arrival_prev = last_arrival;
-        // Reset the timestamp chain after Backspace/Del so the next char (IME-committed) is not
-        // mistaken for part of a burst.
-        last_arrival = if is_ime_edit { None } else { Some(now) };
-        // in_paste_burst: we are mid-burst → skip repaint this keystroke.
-        // paste_just_ended: first keystroke outside the burst → repaint once to flush.
-        let in_paste_burst = buffered && prev_buffered;
-        let _paste_just_ended = !buffered && prev_buffered;
-        key_debug_log(&key, is_ime_edit, buffered, in_paste_burst);
+
+        // Check if additional events are already pending in stdin (e.g. during fast bursts or multi-line pastes)
+        let pending = event::poll(Duration::ZERO).unwrap_or(false);
+        key_debug_log(&key, false, pending, false);
         // If the agent is awaiting a per-action approval, THIS keystroke is the answer — route a
         // y/n/a decision to the blocked gate and never treat it as draft input. Other keys are
         // ignored so a stray press can't accidentally approve.
@@ -2084,15 +2035,18 @@ fn input_loop(
             // A newline INSIDE a paste → a literal newline in the draft, never a submit. This is the
             // fix for a multi-line paste firing one message per line: the whole paste accumulates in
             // one draft and is sent (and read by the model) as a single message.
-            Key::Enter if buffered => {
+            Key::Enter if pending => {
                 let mut r = render().lock().unwrap();
                 let cur = r.cursor;
                 r.draft.insert(cur, '\n');
                 r.cursor += 1;
+                r.normalize_draft();
                 r.palette_sel = 0;
                 drop(r);
                 hist_idx = None;
-                repaint();
+                if !event::poll(Duration::ZERO).unwrap_or(false) {
+                    repaint();
+                }
             }
             Key::Enter => {
                 // If the `@` file picker is open, Enter completes the file (same as Tab) instead of
@@ -2367,13 +2321,11 @@ fn input_loop(
                 let cur = r.cursor;
                 r.draft.insert(cur, c);
                 r.cursor += 1;
+                r.normalize_draft();
                 r.palette_sel = 0; // matches changed → reset highlight to the nearest
                 drop(r);
                 hist_idx = None;
-                // Paste throttle: during a paste burst (hundreds of chars arriving <50ms apart), skip
-                // repaint for every char. Only repaint once when the burst ends. Cuts paste lag from
-                // O(n chars) repaints to 1 final repaint showing the complete text instantly.
-                if !in_paste_burst {
+                if !event::poll(Duration::ZERO).unwrap_or(false) {
                     repaint();
                 }
             }
@@ -2383,10 +2335,11 @@ fn input_loop(
                     let cur = r.cursor - 1;
                     r.draft.remove(cur);
                     r.cursor = cur;
+                    r.normalize_draft();
                     r.palette_sel = 0;
                     drop(r);
                     hist_idx = None;
-                    if !in_paste_burst {
+                    if !event::poll(Duration::ZERO).unwrap_or(false) {
                         repaint();
                     }
                 }
@@ -2396,9 +2349,11 @@ fn input_loop(
                 if r.cursor < r.draft.len() {
                     let cur = r.cursor;
                     r.draft.remove(cur);
+                    r.normalize_draft();
                     r.palette_sel = 0;
                     drop(r);
-                    if !in_paste_burst {
+                    hist_idx = None;
+                    if !event::poll(Duration::ZERO).unwrap_or(false) {
                         repaint();
                     }
                 }
@@ -3881,5 +3836,34 @@ mod tests {
         // so this must be safe to call from anywhere: with no TUI it degrades to stderr.
         assert!(!active() && !retained_running());
         note_line("[test] out-of-band warning");
+    }
+
+    #[test]
+    fn test_normalize_draft_composes_vietnamese_and_adjusts_cursor() {
+        let mut r = Render {
+            draft: vec!['t', 'i', 'e', '\u{0302}', '\u{0301}', 'n', 'g'],
+            cursor: 5,
+            images: 0,
+            status: String::new(),
+            palette_sel: 0,
+            at_sel: 0,
+            model_menu_active: false,
+            model_menu_sel: 0,
+            model_menu_rows: Vec::new(),
+            sessions_menu_active: false,
+            sessions_menu_sel: 0,
+            sessions_menu_rows: Vec::new(),
+            sessions_menu_deletable_rows: 0,
+            text_overlay_active: false,
+            text_overlay_scroll: 0,
+            text_overlay_title: String::new(),
+            text_overlay_lines: Vec::new(),
+            queued_count: 0,
+        };
+
+        r.normalize_draft();
+        let s: String = r.draft.iter().collect();
+        assert_eq!(s, "tiếng");
+        assert_eq!(r.cursor, 3); // points directly after 'ế'
     }
 }

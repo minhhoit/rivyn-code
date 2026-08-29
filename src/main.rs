@@ -3859,6 +3859,7 @@ async fn skills_menu() -> Result<()> {
                     s.description.clone()
                 };
                 let origin = match s.origin {
+                    skill::SkillOrigin::Builtin => " [builtin]",
                     skill::SkillOrigin::Global => "",
                     skill::SkillOrigin::Project => " [project]",
                     skill::SkillOrigin::Repo => " [repo]",
@@ -8245,6 +8246,10 @@ Commands:
   /memory [query]    show your profile, or search memory; /memory remember <fact> to save
   /persona           pick the character the agent role-plays (list · select · new · clear · delete)
   /skills            saved procedures the agent can load (list · view · new · delete)
+  /vibe [topic]      rapid vibe coding workflow & prototyping guide (vibe-coding, clean-architecture, API design, Rust)
+  /design [topic]    modern web UI/UX & generative UI design guide (tokens, bento grids, micro-interactions, Tailwind)
+  /secure [topic]    security audit, hardening & RBAC playbook (OWASP top 10, auth/RBAC, dependency scan)
+  /market [topic]    product launch, copywriting & sales playbook (GTM, PAS/AIDA copy, technical SEO, B2B sales)
   /commands          your custom slash commands — markdown macros in ~/.aizen/commands/ ($ARGUMENTS · @file · !`cmd`)
   /apps              connected apps & MCP catalog — Telegram/Discord/Slack/webhook + browser sign-in apps
   /mcp               MCP servers from ~/.aizen/mcp.json — lifecycle generation, health, pinned schema + tools
@@ -8295,6 +8300,101 @@ fn slash_is_interactive(cmd: &str) -> bool {
 
 async fn slash_tools(_arg: &str) {
     tui::emit_line(&agent::toolsets::format_config_status());
+}
+
+async fn slash_vibe(arg: &str) {
+    if !arg.trim().is_empty() {
+        if let Some(sk) = skill::load(arg.trim()) {
+            tui::emit_line(&skill::render_loaded(&sk));
+            return;
+        }
+    }
+    tui::emit_line(&format!(
+        "{}\n{}\n\n{}\n{}\n  • {}\n  • {}\n  • {}\n  • {}\n\n{}\n  • {}\n  • {}\n  • {}",
+        style("=== Vibe Coding & Rapid Prototyping ===").bold().cyan(),
+        style("Fast, iterative flow with instant verification & native Vietnamese input.").dim(),
+        style("Available Vibe & Programming Skills:").bold(),
+        style("  (Type `/vibe <skill-name>` to read the full playbook)").dim(),
+        style("vibe-coding-workflow        — Tight feedback loops, prompt heuristics, bilingual context").cyan(),
+        style("clean-architecture-patterns — Domain-Driven Design, Hexagonal/Ports & Adapters, SOLID").cyan(),
+        style("fullstack-api-design        — REST/gRPC/WebSocket standards, RFC 7807, idempotency").cyan(),
+        style("rust-mastery                — Memory safety, Tokio async guidelines, zero-cost abstractions").cyan(),
+        style("Pro-tips:").bold(),
+        style("1. Describe your desired outcome naturally in Vietnamese or English.").dim(),
+        style("2. Build atomic scaffolds first, verify with tests, then iterate on polish.").dim(),
+        style("3. Use `/goal <objective>` for autonomous end-to-end task execution.").dim(),
+    ));
+}
+
+async fn slash_design(arg: &str) {
+    if !arg.trim().is_empty() {
+        if let Some(sk) = skill::load(arg.trim()) {
+            tui::emit_line(&skill::render_loaded(&sk));
+            return;
+        }
+    }
+    tui::emit_line(&format!(
+        "{}\n{}\n\n{}\n{}\n  • {}\n  • {}\n  • {}\n  • {}\n\n{}\n  • {}\n  • {}\n  • {}",
+        style("=== Modern Web Design & Generative UI ===").bold().magenta(),
+        style("World-class UI/UX standards, typography hierarchy, fluid layouts & animations.").dim(),
+        style("Available Design Skills:").bold(),
+        style("  (Type `/design <skill-name>` to read the full playbook)").dim(),
+        style("modern-web-design           — Typography scale, bento layouts, micro-interactions, WCAG AAA").magenta(),
+        style("generative-ui               — Stateful interactive widgets, charts, standalone components").magenta(),
+        style("design-system-foundations   — Token taxonomy (3 tiers), atomic component hierarchy, API props").magenta(),
+        style("responsive-tailwind-ui      — Mobile-first layout, container queries, fluid typography, dark mode").magenta(),
+        style("Pro-tips:").bold(),
+        style("1. Prioritize mobile-first layout with smooth micro-interactions.").dim(),
+        style("2. Use self-contained generative UI widgets for live data visualization.").dim(),
+        style("3. Keep semantic color tokens and WCAG AAA contrast ratios intact.").dim(),
+    ));
+}
+
+async fn slash_secure(arg: &str) {
+    if !arg.trim().is_empty() {
+        if let Some(sk) = skill::load(arg.trim()) {
+            tui::emit_line(&skill::render_loaded(&sk));
+            return;
+        }
+    }
+    tui::emit_line(&format!(
+        "{}\n{}\n\n{}\n{}\n  • {}\n  • {}\n  • {}\n\n{}\n  • {}\n  • {}\n  • {}",
+        style("=== Security Audit & Hardening ===").bold().yellow(),
+        style("OWASP Top 10 mitigation, token rotation, secret management & dependency scanning.").dim(),
+        style("Available Security Skills:").bold(),
+        style("  (Type `/secure <skill-name>` to read the full playbook)").dim(),
+        style("security-audit-and-hardening   — OWASP Top 10 defenses, SSRF/XSS/SQLi mitigations, security headers").yellow(),
+        style("secure-auth-and-rbac          — Argon2id hashing, rotating refresh tokens, RBAC/ABAC models").yellow(),
+        style("dependency-vulnerability-scan — Supply chain security, lockfile auditing (cargo/npm/pip audit)").yellow(),
+        style("Pro-tips:").bold(),
+        style("1. Never commit secrets to git repositories; enforce automated scanning.").dim(),
+        style("2. Always parameterize queries and validate input boundaries strictly.").dim(),
+        style("3. Use short-lived access tokens + rotating refresh tokens for auth.").dim(),
+    ));
+}
+
+async fn slash_market(arg: &str) {
+    if !arg.trim().is_empty() {
+        if let Some(sk) = skill::load(arg.trim()) {
+            tui::emit_line(&skill::render_loaded(&sk));
+            return;
+        }
+    }
+    tui::emit_line(&format!(
+        "{}\n{}\n\n{}\n{}\n  • {}\n  • {}\n  • {}\n  • {}\n\n{}\n  • {}\n  • {}\n  • {}",
+        style("=== Product Launch, Copywriting & Sales ===").bold().green(),
+        style("Go-To-Market playbooks, high-converting copy, technical SEO & B2B SaaS sales.").dim(),
+        style("Available Marketing & Sales Skills:").bold(),
+        style("  (Type `/market <skill-name>` to read the full playbook)").dim(),
+        style("product-launch-and-gtm       — Product Hunt/HN launch playbooks, waitlists, viral loops").green(),
+        style("high-converting-copywriting  — PAS/AIDA copywriting formulas, hero section anatomy, CTAs").green(),
+        style("developer-marketing-and-seo  — GitHub README architecture, programmatic SEO, tech tutorials").green(),
+        style("b2b-saas-sales-playbook      — MEDDPICC qualification, discovery calls, pricing tiers").green(),
+        style("Pro-tips:").bold(),
+        style("1. Focus headlines on clear transformations rather than technical jargon.").dim(),
+        style("2. Structure GitHub READMEs for instant time-to-hello-world.").dim(),
+        style("3. Use MEDDPICC to qualify high-intent B2B enterprise deals.").dim(),
+    ));
 }
 
 /// `/workflows` — live multi-agent activity. In retained mode the panel REFRESHES itself (elapsed
@@ -9642,6 +9742,10 @@ async fn handle_slash(
                 tui::note_line(&format!("{} {e}", style("skills:").red()));
             }
         }
+        "vibe" | "vibecoding" => slash_vibe(arg).await,
+        "design" => slash_design(arg).await,
+        "secure" | "security" => slash_secure(arg).await,
+        "market" | "marketing" => slash_market(arg).await,
         "apps" | "integrations" => {
             if let Err(e) = apps_menu().await {
                 tui::note_line(&format!("{} {e}", style("apps:").red()));
@@ -15255,6 +15359,7 @@ async fn run_skill(cmd: SkillCmd) -> Result<()> {
                     &s.description
                 };
                 let tag = match s.origin {
+                    skill::SkillOrigin::Builtin => " [builtin]",
                     skill::SkillOrigin::Global => "",
                     skill::SkillOrigin::Project => " [project]",
                     skill::SkillOrigin::Repo => " [repo]",
