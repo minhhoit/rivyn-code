@@ -54,6 +54,77 @@ That's the whole setup. No env vars, no config file to hand-edit.
 `cargo install --git https://github.com/rivyn-llc/aizen`. Upgrade or roll back any time with
 `aizen update`. The Windows `.exe` is unsigned, so SmartScreen will ask: *More info → Run anyway*.</sub>
 
+## Provider setup (base URL + API key + model)
+
+Aizen works with **any OpenAI-compatible `/chat/completions` endpoint**. You only need three things:
+
+| Provider | Base URL | Auth | Notes |
+|---|---|---|---|
+| **OpenAI** | `https://api.openai.com/v1` | Bearer | Standard |
+| **OpenRouter** | `https://openrouter.ai/api/v1` | Bearer | Adds model routing |
+| **Anthropic (gateway)** | `https://api.anthropic.com/v1` | Bearer + `x-api-key` | Auto-detected |
+| **TokenRa** | `https://tokenra.io/v1` | Bearer + `X-Goog-Api-Key` | Auto-detected |
+| **Local (llama.cpp/vLLM/Ollama)** | `http://localhost:8080/v1` | Bearer (or none) | `http` OK for local |
+| **Custom gateway** | `https://your-gateway.example/v1` | Bearer | Any OpenAI-compatible |
+
+### Quick setup (interactive)
+
+```bash
+aizen config          # TUI wizard → Providers & connection → Add provider
+```
+
+### One-liner (non-interactive)
+
+```bash
+# OpenAI
+aizen config set --base-url https://api.openai.com/v1 --api-key sk-... --model gpt-4o-mini
+
+# OpenRouter
+aizen config set --base-url https://openrouter.ai/api/v1 --api-key sk-or-... --model openai/gpt-4o-mini
+
+# TokenRa
+aizen config set --base-url https://tokenra.io/v1 --api-key sk-tr-... --model gpt-4o-mini
+
+# Local llama.cpp / vLLM / Ollama (OpenAI-compatible mode)
+aizen config set --base-url http://localhost:8080/v1 --api-key not-needed --model llama-3.1-8b
+```
+
+### Save multiple profiles & switch instantly
+
+```bash
+aizen config provider add primary   --base-url https://api.openai.com/v1       --api-key sk-...   --model gpt-4o-mini --use
+aizen config provider add openrouter --base-url https://openrouter.ai/api/v1    --api-key sk-or-... --model openai/gpt-4o-mini
+aizen config provider add tokenra   --base-url https://tokenra.io/v1            --api-key sk-tr-... --model gpt-4o-mini
+aizen config provider add local     --base-url http://localhost:8080/v1         --api-key dummy    --model llama-3.1-8b
+
+aizen config provider list          # show all
+aizen config provider use openrouter # switch
+```
+
+Inside the REPL: `/provider` (or `/provider add`, `/provider manage`) does the same thing.
+
+### Environment variable overrides (highest precedence)
+
+```bash
+export AIZEN_BASE_URL=https://api.openai.com/v1
+export AIZEN_API_KEY=sk-...
+export AIZEN_MODEL=gpt-4o-mini
+```
+
+These override any saved provider/profile — Aizen prints a note when they mask a switch.
+
+### Per-role / specialist assignment
+
+Sub-agents and roles (summarizer, oracle, apply, installed specialists) can each use a different saved provider:
+
+```bash
+aizen agents set-provider code-reviewer openrouter              # provider's default model
+aizen agents set-provider code-reviewer openrouter gpt-4.1      # model override
+aizen agents set-provider code-reviewer --clear                 # inherit sub-agent default
+```
+
+Or via REPL: `/agents set-provider code-reviewer openrouter gpt-4.1`
+
 ## Why Aizen
 
 |  | |

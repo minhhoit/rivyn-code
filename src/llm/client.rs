@@ -222,9 +222,33 @@ pub fn is_anthropic_endpoint(base_url: &str) -> bool {
     host == "api.anthropic.com" || host.ends_with(".api.anthropic.com")
 }
 
+/// Does `base_url` point at TokenRa's API host?
+///
+/// TokenRa supports multiple auth methods. The Google-compatible `X-Goog-Api-Key` header
+/// is required alongside the standard Bearer token for their gateway to accept the request.
+pub fn is_tokenra_endpoint(base_url: &str) -> bool {
+    let after_scheme = base_url
+        .split_once("://")
+        .map(|(_, rest)| rest)
+        .unwrap_or(base_url);
+    let host = after_scheme
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or("")
+        .split('@') // strip any userinfo
+        .next_back()
+        .unwrap_or("")
+        .split(':') // strip the port
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    host == "tokenra.io" || host.ends_with(".tokenra.io")
+}
+
 /// Attach auth for `base_url`: always Bearer (what every OpenAI-compatible gateway wants), plus
-/// Anthropic's native pair when the host is theirs. Sending both is safe — each side ignores the
-/// header it doesn't use — and it means one code path serves both wire dialects.
+/// Anthropic's native pair when the host is theirs, and TokenRa's Google-compatible header.
+/// Sending all applicable headers is safe — each side ignores the header it doesn't use —
+/// and it means one code path serves all wire dialects.
 fn with_provider_auth(
     rb: reqwest::RequestBuilder,
     base_url: &str,
@@ -234,6 +258,8 @@ fn with_provider_auth(
     if is_anthropic_endpoint(base_url) {
         rb.header("x-api-key", api_key)
             .header("anthropic-version", "2023-06-01")
+    } else if is_tokenra_endpoint(base_url) {
+        rb.header("X-Goog-Api-Key", api_key)
     } else {
         rb
     }
@@ -1951,6 +1977,30 @@ mod tests {
         }
         // A subdomain of the real host still is.
         assert!(is_anthropic_endpoint("https://eu.api.anthropic.com/v1"));
+    }
+
+    #[test]
+    fn tokenra_endpoint_is_matched_on_host_not_substring() {
+        // First-party TokenRa, with and without a path/port/scheme variation.
+        for b in [
+            "https://tokenra.io/v1",
+            "https://tokenra.io/v1/",
+            "https://TOKENRA.IO/v1",
+            "http://tokenra.io:443/v1",
+        ] {
+            assert!(is_tokenra_endpoint(b), "{b} is first-party TokenRa");
+        }
+        // A proxy that merely MENTIONS tokenra in its path is NOT first-party.
+        for b in [
+            "https://gw.example.com/tokenra/v1",
+            "https://openrouter.ai/api/v1",
+            "https://tokenra.io.evil.test/v1",
+            "http://localhost:11434/v1",
+        ] {
+            assert!(!is_tokenra_endpoint(b), "{b} must not be first-party");
+        }
+        // A subdomain of the real host still is.
+        assert!(is_tokenra_endpoint("https://api.tokenra.io/v1"));
     }
 
     #[test]

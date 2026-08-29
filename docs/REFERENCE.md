@@ -256,6 +256,23 @@ aizen config provider edit backup --base-url https://backup-2.example/v1 --api-k
 aizen config provider rename backup secondary
 ```
 
+### Known providers & auto-detected auth
+
+Aizen auto-detects special auth headers for these first-party endpoints (matched by **host**, not
+substring — a proxy that merely mentions the name in its path is not misidentified):
+
+| Provider | Base URL host | Auth headers sent |
+|---|---|---|
+| **OpenAI** | `api.openai.com` | `Authorization: Bearer <key>` |
+| **OpenRouter** | `openrouter.ai` | `Authorization: Bearer <key>` |
+| **Anthropic** | `api.anthropic.com` / `*.api.anthropic.com` | `Authorization: Bearer <key>` + `x-api-key: <key>` + `anthropic-version: 2023-06-01` |
+| **TokenRa** | `tokenra.io` / `*.tokenra.io` | `Authorization: Bearer <key>` + `X-Goog-Api-Key: <key>` |
+| **Custom / Local** | anything else | `Authorization: Bearer <key>` |
+
+For Anthropic and TokenRa, sending both the standard Bearer token and the provider-specific header
+is safe — each side ignores the header it doesn't expect. If you use a **gateway/proxy** in front of
+one of these, just use the gateway's host/URL; Aizen will send only the standard Bearer token.
+
 Inside the REPL, `/provider` is the fast one-pick switcher. `/provider add` opens the add wizard,
 `/provider manage` opens Use/Edit/Rename/Delete, and `/provider backup` switches directly. The next turn and health probe use the selected URL, key, and model. This is manual failover, not an
 automatic retry/failover chain. `AIZEN_BASE_URL`, `AIZEN_API_KEY`, and `AIZEN_MODEL` still override the
