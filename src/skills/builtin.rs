@@ -400,6 +400,179 @@ when: closing B2B sales deals, qualifying enterprise leads, drafting cold outrea
 - Final 7 mins: Clear next steps and scheduling follow-up milestone.
 "#,
     },
+
+    // ==========================================
+    // RIVYN COGNITIVE OS, BUSINESS & STRATEGY SKILLS
+    // ==========================================
+    BuiltinDef {
+        name: "alex-hormozi-perspective",
+        raw_markdown: r#"---
+name: alex-hormozi-perspective
+description: Alex Hormozi's thinking framework: Value Equation, Grand Slam Offers, $100M Leads Core Four, Rule of 100, Trim & Stack, and pricing leverage.
+when: evaluating business offers, pricing strategy, lead generation, customer acquisition, conversion bottlenecks, or scaling business models
+---
+# Alex Hormozi · Offer & Growth Framework
+
+## 1. The Value Equation
+- **Formula**: `Value = (Dream Outcome × Perceived Likelihood of Achievement) / (Time Delay × Effort & Sacrifice)`.
+- Maximize top variables: Paint vivid dream outcome; stack ironclad proof/guarantees to raise perceived likelihood to ~100%.
+- Minimize bottom variables: Cut time delay to instant gratification; eliminate user friction and effort down to near zero.
+
+## 2. Grand Slam Offer Architecture
+- **Step 1 - Identify Obstacles**: List every objection and physical constraint preventing the client from reaching the dream outcome.
+- **Step 2 - Solutions & Trim/Stack**: Create high-value, low-cost delivery vehicles for every obstacle. Trim low-impact items and stack high-leverage assets.
+- **Step 3 - Unbeatable Guarantees**: Unconditional 30-day, Conditional (action-based), or Anti-guarantee (all sales final with premium exclusivity).
+- **Step 4 - Pricing Anchor**: Price at 10x ROI of the economic value created. Never compete on price; compete on differentiated value.
+
+## 3. Core Four Lead Generation
+- **Four Channels**:
+  1. Warm Outreach (1-to-1 existing network)
+  2. Cold Outreach (1-to-1 targeted strangers)
+  3. Free Content (1-to-many public media & social)
+  4. Paid Advertising (1-to-many targeted traffic)
+- **The Rule of 100**: Execute 100 primary actions every day for 100 days straight (100 cold outreaches, 100 mins content creation, or $100 ad spend).
+"#,
+    },
+    BuiltinDef {
+        name: "rivyn-skill-forge",
+        raw_markdown: r#"---
+name: rivyn-skill-forge
+description: Cognitive OS distillation protocol: extract thinking frameworks, mental models, decision heuristics, and DNA from any world-class thinker (Jobs, Musk, Munger, Feynman, Hormozi, Naval).
+when: creating persona skills, distilling experts, extracting mental models, analyzing how a leader thinks, or building custom agent playbooks
+---
+# Rivyn Skill Forge · Cognitive OS Distillation
+
+## 1. Core Distillation Protocol
+- Capture **HOW** they think (cognitive operating system), not just **WHAT** they said (quotes).
+- Research 6 key dimensions:
+  1. **Primary Writings & Speeches**: Canonical texts, interviews, letters, podcasts.
+  2. **Core Mental Models**: The lenses through which they perceive problems.
+  3. **Decision Heuristics**: Intuitive rules of thumb under extreme uncertainty.
+  4. **Tone of Voice & Expression DNA**: Cadence, vocabulary, analogies, formatting.
+  5. **Anti-Patterns & Hard Boundaries**: What they explicitly NEVER do.
+  6. **Honest Limitations**: Where the framework breaks down or does not apply.
+
+## 2. Extraction Taxonomy
+- **Mental Model Lens**: One-liner definition + Grounded evidence + Practical application + Boundary limitation.
+- **Decision Rules**: IF [Scenario] -> THEN [Action] -> UNLESS [Exception].
+- **Persona Roleplay Rules**: First-person perspective, framework-first reasoning, numbers over adjectives, conclusion before explanation.
+"#,
+    },
+    BuiltinDef {
+        name: "steve-jobs-product-taste",
+        raw_markdown: r#"---
+name: steve-jobs-product-taste
+description: Steve Jobs' product philosophy: radical focus, saying NO to 100 good ideas, end-to-end integration, insane simplicity, and uncompromising product taste.
+when: reviewing product design, user experience, feature roadmaps, simplifying workflows, setting product strategy, or critiquing aesthetics
+---
+# Steve Jobs · Radical Focus & Product Taste
+
+## 1. Radical Focus & The Art of Saying No
+- "People think focus means saying yes to the thing you've got to focus on. But that's not what it means at all. It means saying no to the hundred other good ideas that there are."
+- Kill mediocre features ruthlessly. A product with 3 insanely great capabilities crushes one with 30 half-baked features.
+
+## 2. End-to-End Vertical Integration
+- Deep synergy between hardware, software, user interface, and developer experience.
+- Control the entire customer journey from the initial discovery to unboxing to daily workflows.
+
+## 3. Insane Simplicity & User Delight
+- Simplicity is not the absence of clutter; it is the ultimate sophistication.
+- Eliminate extra buttons, settings, and cognitive load. Make the interface feel obvious and magical.
+- Don't ask customers what they want in focus groups — invent what they cannot yet imagine and execute with obsessive precision.
+"#,
+    },
+    BuiltinDef {
+        name: "elon-musk-first-principles",
+        raw_markdown: r#"---
+name: elon-musk-first-principles
+description: Elon Musk's first-principles thinking and 5-step engineering algorithm: calculate physical limits, question requirements, delete steps, accelerate cycle time.
+when: solving difficult technical problems, cost reduction, bottleneck elimination, system optimization, or questioning complex requirements
+---
+# Elon Musk · First Principles & Engineering Algorithm
+
+## 1. First-Principles Physics Limit
+- Boil things down to the most fundamental truths and reason up from there, rather than reasoning by analogy.
+- Calculate the theoretical minimum cost/actions: What are the raw materials and fundamental physical laws?
+- If the current solution is >3x more complex or costly than the physical limit, there are massive inefficiencies to delete.
+
+## 2. The 5-Step Engineering Algorithm
+1. **Make requirements less dumb**: Every requirement must come with a specific person's name attached, not a department. Always question it, especially if it came from very smart people.
+2. **Delete the part or process step**: If you are not adding back at least 10% of what you delete, you are not deleting enough.
+3. **Simplify or optimize**: Never optimize something that should not exist in the first place.
+4. **Accelerate cycle time**: Move faster, but only after steps 1–3 are done.
+5. **Automate**: Only automate as the final step.
+"#,
+    },
+    BuiltinDef {
+        name: "charlie-munger-inversion",
+        raw_markdown: r#"---
+name: charlie-munger-inversion
+description: Charlie Munger's multi-disciplinary latticework of mental models: inversion principle, avoiding stupidity, checklist of cognitive biases, and long-term compounding.
+when: strategic risk assessment, avoiding costly mistakes, auditing decisions, identifying cognitive biases, or evaluating long-term business moats
+---
+# Charlie Munger · Inversion & Mental Models
+
+## 1. The Inversion Principle
+- "Invert, always invert: Turn a situation or problem upside down. Look at it backward. What happens if all our plans go wrong? Where don't we want to go, and how do you get there?"
+- Instead of trying to be brilliant, focus on consistently avoiding standard stupidity.
+- Ask: "What would guarantee the failure of this project or company?" and systematically eradicate every cause.
+
+## 2. Latticework of Mental Models
+- Draw models from psychology, microeconomics, biology, physics, and probability.
+- Avoid the "Man with a Hammer" syndrome: don't force one discipline's tool on every problem.
+
+## 3. Cognitive Misjudgment Checklist
+- Audit plans against incentives, commitment/consistency bias, social proof, contrast misreaction, deprival super-reaction (loss aversion), and authority influence.
+"#,
+    },
+    BuiltinDef {
+        name: "naval-ravikant-strategy",
+        raw_markdown: r#"---
+name: naval-ravikant-strategy
+description: Naval Ravikant's strategy for wealth creation: permissionless leverage (code & media), specific knowledge, judgment over effort, and serial compounding.
+when: career strategy, building indie software products, content flywheel leverage, capital allocation, or escaping zero-sum games
+---
+# Naval Ravikant · Permissionless Leverage & Judgment
+
+## 1. Forms of Leverage
+- **Labor**: People working for you (oldest, highest friction, political).
+- **Capital**: Money invested in assets and compounding.
+- **Code & Media (Permissionless Leverage)**: Software and content work for you while you sleep. Zero marginal cost of replication. The leverage of the modern era.
+
+## 2. Specific Knowledge & Authenticity
+- Specific knowledge is knowledge you cannot be trained for. If society can train you, it can train someone else and replace you.
+- Found at the intersection of your genuine curiosity and natural obsession.
+- Escape competition through authenticity: "No one can compete with you on being you."
+
+## 3. Serial Compounding vs Parallel Burnout
+- All the real returns in life come from compound interest: in wealth, relationships, and knowledge.
+- Focus on one high-leverage vehicle at a time. Compound serially rather than burning out across scattered parallel projects.
+"#,
+    },
+    BuiltinDef {
+        name: "uiux-designer",
+        raw_markdown: r#"---
+name: uiux-designer
+description: Comprehensive UI/UX design masterclass: 50+ modern design styles, 97 harmonized color palettes, 57 font pairings, responsive layout rules, and WCAG AAA accessibility.
+when: designing user interfaces, selecting typography and palettes, crafting design aesthetics (Bento, Glassmorphism, Brutalism, Minimalist, Dark Cyber), or reviewing UI/UX
+---
+# UI/UX Designer · Master Aesthetic & Systems Playbook
+
+## 1. Aesthetic Styles Architecture
+- **Bento Grid**: Asymmetric modular cards, subtle borders, high information density with breathing room.
+- **Glassmorphism**: Layered backdrop blur (`backdrop-blur-md`), subtle translucent white borders (`border-white/10`), ambient radial glow.
+- **Neo-Brutalism**: Bold solid borders (`border-2 border-black`), high contrast shadows (`shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`), vibrant primary colors.
+- **Minimalist Modern**: Generous whitespace, refined typographic scale, monochromatic neutral base with single high-impact accent.
+
+## 2. Color Harmonization & Accessibility
+- **60-30-10 Rule**: 60% dominant background/surface, 30% structural secondary/card, 10% high-intent accent CTA.
+- **Contrast Ratios**: Strictly preserve WCAG AAA standards for legible readability across both light and dark modes.
+
+## 3. Responsive Layout Hierarchy
+- Mobile-first scaffolding with intrinsic grid columns (`grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))`).
+- Interactive tactile feedback on every clickable surface (scale transforms, subtle glow, visible focus rings).
+"#,
+    },
 ];
 
 /// Return all embedded builtin skills.
@@ -436,7 +609,7 @@ mod tests {
     #[test]
     fn all_builtin_skills_parse_and_load() {
         let skills = list();
-        assert_eq!(skills.len(), 15, "should have 15 builtin skills");
+        assert_eq!(skills.len(), 22, "should have 22 builtin skills");
         for sk in &skills {
             assert!(!sk.name.is_empty());
             assert!(!sk.description.is_empty(), "skill {} has empty description", sk.name);
@@ -456,6 +629,7 @@ mod tests {
         assert!(load("generative-ui").is_some());
         assert!(load("design-system-foundations").is_some());
         assert!(load("responsive-tailwind-ui").is_some());
+        assert!(load("uiux-designer").is_some());
 
         // Programming / Vibe Coding
         assert!(load("vibe-coding-workflow").is_some());
@@ -473,5 +647,13 @@ mod tests {
         assert!(load("high-converting-copywriting").is_some());
         assert!(load("developer-marketing-and-seo").is_some());
         assert!(load("b2b-saas-sales-playbook").is_some());
+
+        // Rivyn Cognitive OS & Business Strategy
+        assert!(load("alex-hormozi-perspective").is_some());
+        assert!(load("rivyn-skill-forge").is_some());
+        assert!(load("steve-jobs-product-taste").is_some());
+        assert!(load("elon-musk-first-principles").is_some());
+        assert!(load("charlie-munger-inversion").is_some());
+        assert!(load("naval-ravikant-strategy").is_some());
     }
 }

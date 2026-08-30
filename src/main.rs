@@ -8250,6 +8250,7 @@ Commands:
   /design [topic]    modern web UI/UX & generative UI design guide (tokens, bento grids, micro-interactions, Tailwind)
   /secure [topic]    security audit, hardening & RBAC playbook (OWASP top 10, auth/RBAC, dependency scan)
   /market [topic]    product launch, copywriting & sales playbook (GTM, PAS/AIDA copy, technical SEO, B2B sales)
+  /works [topic]     business, marketing, strategy & goal execution agent hub (Hormozi, Jobs, Musk, Munger, Naval, GTM)
   /commands          your custom slash commands — markdown macros in ~/.aizen/commands/ ($ARGUMENTS · @file · !`cmd`)
   /apps              connected apps & MCP catalog — Telegram/Discord/Slack/webhook + browser sign-in apps
   /mcp               MCP servers from ~/.aizen/mcp.json — lifecycle generation, health, pinned schema + tools
@@ -8394,6 +8395,74 @@ async fn slash_market(arg: &str) {
         style("1. Focus headlines on clear transformations rather than technical jargon.").dim(),
         style("2. Structure GitHub READMEs for instant time-to-hello-world.").dim(),
         style("3. Use MEDDPICC to qualify high-intent B2B enterprise deals.").dim(),
+    ));
+}
+
+async fn slash_works(arg: &str) {
+    let trimmed = arg.trim();
+    if !trimmed.is_empty() {
+        let lower = trimmed.to_lowercase();
+        let skill_key = match lower.as_str() {
+            "hormozi" | "offer" | "offers" | "leads" => "alex-hormozi-perspective",
+            "forge" | "distill" | "skill-forge" => "rivyn-skill-forge",
+            "jobs" | "steve-jobs" | "taste" | "focus" => "steve-jobs-product-taste",
+            "musk" | "elon-musk" | "first-principles" => "elon-musk-first-principles",
+            "munger" | "charlie-munger" | "inversion" => "charlie-munger-inversion",
+            "naval" | "naval-ravikant" | "leverage" => "naval-ravikant-strategy",
+            "design" | "uiux" | "ui" => "uiux-designer",
+            "gtm" | "launch" => "product-launch-and-gtm",
+            "copy" | "copywriting" => "high-converting-copywriting",
+            "seo" | "dev-marketing" => "developer-marketing-and-seo",
+            "sales" | "saas" | "pricing" => "b2b-saas-sales-playbook",
+            other => other,
+        };
+
+        if skill_key == "board" || skill_key == "advisory" {
+            tui::emit_line(&format!(
+                "{}\n{}\n\n{}\n{}\n{}\n{}\n{}\n\n{}\n{}",
+                style("=== 🏛️ Works Executive Advisory Board ===").bold().cyan(),
+                style("Multi-perspective strategic consultation across 5 foundational cognitive OS:").dim(),
+                style("1. 🎯 Alex Hormozi    — Value Equation, Grand Slam Offers, $100M Leads, 10x Pricing").yellow(),
+                style("2. 🍎 Steve Jobs       — Radical Focus, Saying NO to 100 things, End-to-End Taste").magenta(),
+                style("3. 🚀 Elon Musk        — First Principles, 5-Step Engineering Algorithm, Physical Limits").cyan(),
+                style("4. 🧠 Charlie Munger   — Inversion Principle, 25 Cognitive Biases, Multidisciplinary Moats").blue(),
+                style("5. ⚓ Naval Ravikant   — Permissionless Leverage (Code/Media), Specific Knowledge, Compounding").green(),
+                style("Tip: Ask a direct question or prompt:").bold(),
+                style("  \"Evaluate our new pricing model from the perspectives of Hormozi, Munger, and Jobs.\"").dim()
+            ));
+            return;
+        }
+
+        if let Some(sk) = skill::load(skill_key) {
+            tui::emit_line(&skill::render_loaded(&sk));
+            return;
+        }
+    }
+
+    tui::emit_line(&format!(
+        "{}\n{}\n\n{}\n{}\n  • {}\n  • {}\n  • {}\n  • {}\n  • {}\n  • {}\n\n{}\n{}\n  • {}\n  • {}\n  • {}\n  • {}\n  • {}\n\n{}\n  • {}\n  • {}\n  • {}\n  • {}",
+        style("=== 💼 Works · Business, Marketing & Strategy Hub ===").bold().cyan(),
+        style("Executive advisory board, cognitive OS distillation, and GTM growth execution.").dim(),
+        style("🧠 Cognitive OS & Thinking Frameworks:").bold(),
+        style("  (Type `/works <name>` to inspect full playbook)").dim(),
+        style("alex-hormozi-perspective — Value Equation, Grand Slam Offers, $100M Leads, Rule of 100").yellow(),
+        style("steve-jobs-product-taste — Radical focus, saying NO to 100 ideas, end-to-end integration").magenta(),
+        style("elon-musk-first-principles — First-principles physics limits, 5-step engineering algorithm").cyan(),
+        style("charlie-munger-inversion — Inversion principle, avoiding stupidity, 25 cognitive biases").blue(),
+        style("naval-ravikant-strategy  — Permissionless leverage (code/media), specific knowledge").green(),
+        style("rivyn-skill-forge        — Distill any expert's cognitive OS into a runnable agent skill").dim(),
+        style("📈 Growth, Marketing & Product Execution:").bold(),
+        style("  (Type `/works <topic>` to inspect playbook)").dim(),
+        style("product-launch-and-gtm   — Product Hunt / HN launch playbooks, waitlists, viral distribution").green(),
+        style("high-converting-copy     — PAS / AIDA copywriting formulas, hero page anatomy, CTAs").green(),
+        style("b2b-saas-sales-playbook  — MEDDPICC enterprise qualification, discovery, pricing tiers").green(),
+        style("developer-marketing-seo  — Programmatic SEO, technical developer marketing, READMEs").green(),
+        style("uiux-designer            — 50+ modern UI styles, 97 color palettes, 57 font pairings").magenta(),
+        style("⚡ Quick Commands:").bold(),
+        style("`/works board`          — Convene the 5-mind Executive Advisory Board").cyan(),
+        style("`/works hormozi`        — Audit your offer with Alex Hormozi's Value Equation").cyan(),
+        style("`/works gtm`            — Generate a full Go-To-Market and launch playbook").cyan(),
+        style("`/goal <objective>`     — Launch an autonomous execution loop to achieve your goal").cyan(),
     ));
 }
 
@@ -9746,6 +9815,7 @@ async fn handle_slash(
         "design" => slash_design(arg).await,
         "secure" | "security" => slash_secure(arg).await,
         "market" | "marketing" => slash_market(arg).await,
+        "works" | "workspaces" | "biz" | "business" => slash_works(arg).await,
         "apps" | "integrations" => {
             if let Err(e) = apps_menu().await {
                 tui::note_line(&format!("{} {e}", style("apps:").red()));

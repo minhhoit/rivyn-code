@@ -106,6 +106,16 @@ const BUILTINS: &[Builtin] = &[
         argument_hint: "[launch|copy|seo|sales]",
     },
     Builtin {
+        name: "works",
+        description: "business, marketing, product & strategy agent workspace",
+        argument_hint: "[goal|hormozi|copy|gtm|board|distill|<topic>]",
+    },
+    Builtin {
+        name: "biz",
+        description: "alias for /works",
+        argument_hint: "[goal|hormozi|copy|gtm|board|distill|<topic>]",
+    },
+    Builtin {
         name: "commands",
         description: "list custom markdown slash commands",
         argument_hint: "",
@@ -446,6 +456,8 @@ const DISPATCH_ALIASES: &[&str] = &[
     "changes",
     "worktree",
     "worktrees",
+    "workspaces",
+    "business",
     "sessions-live",
 ];
 
@@ -921,6 +933,18 @@ mod tests {
         assert!(matches!(
             classify("/market gtm"),
             Verdict::Command { name, arg } if name == "market" && arg == "gtm"
+        ));
+        assert!(matches!(
+            classify("/works"),
+            Verdict::Command { name, .. } if name == "works"
+        ));
+        assert!(matches!(
+            classify("/works hormozi"),
+            Verdict::Command { name, arg } if name == "works" && arg == "hormozi"
+        ));
+        assert!(matches!(
+            classify("/biz goal launch my new SaaS"),
+            Verdict::Command { name, arg } if name == "biz" && arg == "goal launch my new SaaS"
         ));
     }
 }
