@@ -219,6 +219,94 @@ enum Commands {
     },
     /// Render the moonlit braille art scene (one frame) to the terminal.
     Art,
+    /// TypeSafe System One integration: calibrated decision judgments, command safety guardrails, intent routing.
+    Typesafe {
+        #[command(subcommand)]
+        cmd: TypesafeCmd,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum TypesafeCmd {
+    /// Probe connection and validate TypeSafe API credentials.
+    Test {
+        /// Explicit API key (defaults to TYPESAFE_API_KEY or 'jev' profile in cli-config.json).
+        #[arg(long)]
+        api_key: Option<String>,
+        /// Explicit base URL (defaults to https://api.typesafe.ai/v1/systemone).
+        #[arg(long)]
+        base_url: Option<String>,
+        /// Model name (defaults to jev-1.13.0).
+        #[arg(long)]
+        model: Option<String>,
+    },
+    /// Pre-flight safety check for shell commands: evaluates destructive risk and execution policy.
+    Guard {
+        /// Shell command to evaluate.
+        command: String,
+        /// Explicit API key.
+        #[arg(long)]
+        api_key: Option<String>,
+        /// Explicit base URL.
+        #[arg(long)]
+        base_url: Option<String>,
+        /// Model name.
+        #[arg(long)]
+        model: Option<String>,
+        /// Output result as formatted JSON.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Task intent and technical complexity triage to recommend model tiers.
+    Route {
+        /// Prompt or task description to classify.
+        text: String,
+        /// Explicit API key.
+        #[arg(long)]
+        api_key: Option<String>,
+        /// Explicit base URL.
+        #[arg(long)]
+        base_url: Option<String>,
+        /// Model name.
+        #[arg(long)]
+        model: Option<String>,
+        /// Output result as formatted JSON.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Flexible decision query: ask Noul (yes/no), Choice, or Score questions over state.
+    Judge {
+        /// Context or state string/JSON to evaluate.
+        #[arg(short, long)]
+        state: Option<String>,
+        /// Ask a Noul question: "[id:]instructions"
+        #[arg(long)]
+        noul: Option<String>,
+        /// Ask a Choice question: "[id:]instructions:opt1=desc1,opt2=desc2"
+        #[arg(long)]
+        choice: Option<String>,
+        /// Ask a Score question: "[id:]instructions:lvl0,lvl1,lvl2..."
+        #[arg(long)]
+        score: Option<String>,
+        /// Pass raw JSON request payload directly.
+        #[arg(long)]
+        raw: Option<String>,
+        /// Read JSON request payload from a file.
+        #[arg(short, long)]
+        file: Option<String>,
+        /// Explicit API key.
+        #[arg(long)]
+        api_key: Option<String>,
+        /// Explicit base URL.
+        #[arg(long)]
+        base_url: Option<String>,
+        /// Model name.
+        #[arg(long)]
+        model: Option<String>,
+        /// Output result as formatted JSON.
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -1346,6 +1434,78 @@ async fn main() -> Result<()> {
             crate::ui::moonscape::run();
             Ok(())
         }
+        Commands::Typesafe { cmd } => match cmd {
+            TypesafeCmd::Test {
+                api_key,
+                base_url,
+                model,
+            } => {
+                features::typesafe::handle_test(
+                    api_key.as_deref(),
+                    base_url.as_deref(),
+                    model.as_deref(),
+                )
+                .await
+            }
+            TypesafeCmd::Guard {
+                command,
+                api_key,
+                base_url,
+                model,
+                json,
+            } => {
+                features::typesafe::handle_guard(
+                    &command,
+                    api_key.as_deref(),
+                    base_url.as_deref(),
+                    model.as_deref(),
+                    json,
+                )
+                .await
+            }
+            TypesafeCmd::Route {
+                text,
+                api_key,
+                base_url,
+                model,
+                json,
+            } => {
+                features::typesafe::handle_route(
+                    &text,
+                    api_key.as_deref(),
+                    base_url.as_deref(),
+                    model.as_deref(),
+                    json,
+                )
+                .await
+            }
+            TypesafeCmd::Judge {
+                state,
+                noul,
+                choice,
+                score,
+                raw,
+                file,
+                api_key,
+                base_url,
+                model,
+                json,
+            } => {
+                features::typesafe::handle_judge(
+                    state.as_deref(),
+                    noul.as_deref(),
+                    choice.as_deref(),
+                    score.as_deref(),
+                    raw.as_deref(),
+                    file.as_deref(),
+                    api_key.as_deref(),
+                    base_url.as_deref(),
+                    model.as_deref(),
+                    json,
+                )
+                .await
+            }
+        },
     }
 }
 

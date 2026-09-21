@@ -643,6 +643,32 @@ used to become the filename — and `/sessions` prints filenames), and a name is
 The credential guard covers name derivation only: it does not redact what is inside a saved transcript,
 so a key pasted into a chat is still in that file's message text.
 
+### `aizen typesafe` — calibrated decisions & command guardrails
+Integration with **TypeSafe AI** System One decision models (`https://api.typesafe.ai/v1/systemone`, default model `jev-1.13.0`). Evaluates context and questions into strictly typed, calibrated probabilities (`noul`, `choice`, `score`).
+Credentials resolve from `--api-key`, env var `TYPESAFE_API_KEY`, or profile `jev` in `~/.aizen/cli-config.json`.
+
+```bash
+# Probe connectivity & validate credentials
+aizen typesafe test [--api-key <key>] [--base-url <url>] [--model <model>]
+
+# Pre-flight safety check for shell commands (risk level + destructive prob + policy)
+aizen typesafe guard "<command>" [--json]
+
+# Task classification & complexity triage (recommends fast vs deep reasoning tiers)
+aizen typesafe route "<prompt/task>" [--json]
+
+# Arbitrary System One decision judgments
+aizen typesafe judge --state "<context>" \
+  --noul "[id:]<instructions>" \
+  --choice "[id:]<instructions>:<opt1=desc1,opt2=desc2>" \
+  --score "[id:]<instructions>:<lvl0,lvl1,lvl2...>" \
+  [--json]
+
+# Directly query using raw JSON string or payload file
+aizen typesafe judge --raw '{"model":"jev-1.13.0","questions":{...}}'
+aizen typesafe judge --file query.json --json
+```
+
 ### `aizen bench` — anti-oracle benches
 ```bash
 aizen bench memory [--split gate|tune|all] [--hybrid]   # retrieval recall vs a baseline

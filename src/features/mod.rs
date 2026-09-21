@@ -10,5 +10,6 @@ pub mod cron;
 pub mod foreign_session;
 pub mod slash;
 pub mod timemachine;
+pub mod typesafe;
 pub mod update;
 pub mod zones;

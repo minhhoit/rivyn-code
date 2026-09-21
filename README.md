@@ -125,6 +125,39 @@ aizen agents set-provider code-reviewer --clear                 # inherit sub-ag
 
 Or via REPL: `/agents set-provider code-reviewer openrouter gpt-4.1`
 
+## TypeSafe System One (Calibrated Decisions & Safety Guardrails)
+
+Aizen includes native integration with **[TypeSafe AI](https://typesafe.ai)** System One models (e.g. `jev-1.13.0`).
+
+Unlike generative LLMs that produce loose conversational text, TypeSafe System One evaluates application state into **strictly typed, mathematically calibrated judgments and probability distributions** (`noul`, `choice`, `score`).
+
+```bash
+# 1. Probe & verify connection (auto-resolves key from profile 'jev', TYPESAFE_API_KEY, or --api-key)
+aizen typesafe test
+
+# 2. Command Guardrail: Pre-flight safety check evaluating destructive risk and policy (ALLOW / CONFIRM / BLOCK)
+aizen typesafe guard "rm -rf /"
+aizen typesafe guard "cargo test"
+
+# 3. Intent Routing & Complexity Triage: Classifies task type and complexity (1-5) to recommend model tiers
+aizen typesafe route "Viết giải thuật tìm kiếm A* bằng Rust tối ưu cache"
+
+# 4. Flexible Decision Engine: Arbitrary questions over state (Noul, Choice, Score)
+aizen typesafe judge --state "User requests deleting staging database" \
+  --choice "risk:Policy action:allow=Proceed,confirm=Ask confirmation,deny=Reject immediately" \
+  --score "urgency:Urgency score:low,medium,high,critical" \
+  --noul "needs_audit:Does this action require compliance auditing?"
+
+# Add --json to any subcommand for CI/CD or scripting integration
+aizen typesafe guard "git push --force origin main" --json
+```
+
+**Credentials Resolution**:
+TypeSafe subcommands resolve credentials seamlessly in the following priority:
+1. `--api-key` / `--model` / `--base-url` command-line flags.
+2. Environment variables: `TYPESAFE_API_KEY`, `TYPESAFE_MODEL`, `TYPESAFE_BASE_URL`.
+3. Saved provider profile in `~/.aizen/cli-config.json` named `jev` or containing `typesafe`.
+
 ## Why Aizen
 
 |  | |
