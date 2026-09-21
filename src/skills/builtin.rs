@@ -114,7 +114,6 @@ when: styling with Tailwind CSS, creating responsive mobile-to-desktop layouts, 
 - Prevent layout shift (CLS) by explicitly reserving image and icon aspect ratios (`aspect-video`, `aspect-square`).
 "#,
     },
-
     // ==========================================
     // PROGRAMMING & VIBE CODING SKILLS
     // ==========================================
@@ -218,7 +217,6 @@ when: writing Rust code, optimizing performance, debugging lifetime/borrow check
 - Use `anyhow` for top-level application boundaries, CLIs, and background tasks.
 "#,
     },
-
     // ==========================================
     // SECURITY SKILLS
     // ==========================================
@@ -292,7 +290,6 @@ when: scanning dependencies for CVEs, updating vulnerable packages, auditing car
 - Audit package scripts (`preinstall`, `postinstall`, `build.rs`) for unauthorized network or filesystem access.
 "#,
     },
-
     // ==========================================
     // MARKETING & SALES SKILLS
     // ==========================================
@@ -400,7 +397,6 @@ when: closing B2B sales deals, qualifying enterprise leads, drafting cold outrea
 - Final 7 mins: Clear next steps and scheduling follow-up milestone.
 "#,
     },
-
     // ==========================================
     // RIVYN COGNITIVE OS, BUSINESS & STRATEGY SKILLS
     // ==========================================
@@ -612,7 +608,11 @@ mod tests {
         assert_eq!(skills.len(), 22, "should have 22 builtin skills");
         for sk in &skills {
             assert!(!sk.name.is_empty());
-            assert!(!sk.description.is_empty(), "skill {} has empty description", sk.name);
+            assert!(
+                !sk.description.is_empty(),
+                "skill {} has empty description",
+                sk.name
+            );
             assert!(!sk.body.is_empty(), "skill {} has empty body", sk.name);
             assert_eq!(sk.origin, SkillOrigin::Builtin);
 

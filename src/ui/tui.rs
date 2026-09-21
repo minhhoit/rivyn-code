@@ -53,7 +53,11 @@ fn key_debug_log(key: &Key, is_ime_edit: bool, buffered: bool, in_paste_burst: b
     }
     use std::io::Write as _;
     let path = crate::core::config::aizen_home().join("debug-keys.log");
-    let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) else {
+    let Ok(mut f) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+    else {
         return;
     };
     let ts = std::time::SystemTime::now()

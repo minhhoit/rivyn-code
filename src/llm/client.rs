@@ -245,6 +245,30 @@ pub fn is_tokenra_endpoint(base_url: &str) -> bool {
     host == "tokenra.io" || host.ends_with(".tokenra.io")
 }
 
+/// Does `base_url` point at TypeSafe's API host?
+///
+/// TypeSafe AI provides System One decision models (`POST /v1/systemone`) rather than
+/// OpenAI-compatible `/chat/completions`. Detecting this host allows Aizen to emit a clear,
+/// actionable diagnostic message instead of an opaque 404 Not Found error.
+pub fn is_typesafe_endpoint(base_url: &str) -> bool {
+    let after_scheme = base_url
+        .split_once("://")
+        .map(|(_, rest)| rest)
+        .unwrap_or(base_url);
+    let host = after_scheme
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or("")
+        .split('@') // strip any userinfo
+        .next_back()
+        .unwrap_or("")
+        .split(':') // strip the port
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    host == "typesafe.ai" || host.ends_with(".typesafe.ai")
+}
+
 /// Attach auth for `base_url`: always Bearer (what every OpenAI-compatible gateway wants), plus
 /// Anthropic's native pair when the host is theirs, and TokenRa's Google-compatible header.
 /// Sending all applicable headers is safe — each side ignores the header it doesn't use —
@@ -350,6 +374,11 @@ async fn check_endpoint_with_deadline(
         return EndpointCheck::Ok(infos);
     }
     let detail = snippet_of(resp.text().await.unwrap_or_default());
+    if is_typesafe_endpoint(base_url) {
+        return EndpointCheck::NotFound(
+            "TypeSafe AI provides System One decision models (POST /v1/systemone), not OpenAI-compatible /chat/completions. See https://docs.typesafe.ai/concepts/system-one".to_string(),
+        );
+    }
     match code {
         401 | 403 => EndpointCheck::Auth(detail),
         404 | 405 => EndpointCheck::NotFound(detail),
@@ -789,6 +818,9 @@ async fn send_chat(
     api_key: &str,
     mut body: ChatRequest,
 ) -> Result<reqwest::Response> {
+    if is_typesafe_endpoint(url) {
+        bail!("TypeSafe AI (api.typesafe.ai) is a System One decision engine (POST /v1/systemone), not an OpenAI-compatible /chat/completions provider. It does not generate text or code. See https://docs.typesafe.ai/concepts/system-one");
+    }
     if body.reasoning_effort.is_some() && effort_known_unsupported(&body.model) {
         body.reasoning_effort = None;
     }
@@ -2001,6 +2033,28 @@ mod tests {
         }
         // A subdomain of the real host still is.
         assert!(is_tokenra_endpoint("https://api.tokenra.io/v1"));
+    }
+
+    #[test]
+    fn typesafe_endpoint_is_matched_on_host_not_substring() {
+        for b in [
+            "https://api.typesafe.ai/v1",
+            "https://api.typesafe.ai/v1/systemone",
+            "https://typesafe.ai",
+            "https://TYPESAFE.AI/v1",
+            "http://typesafe.ai:443/v1",
+        ] {
+            assert!(is_typesafe_endpoint(b), "{b} is first-party TypeSafe");
+        }
+        for b in [
+            "https://gw.example.com/typesafe/v1",
+            "https://openrouter.ai/api/v1",
+            "https://typesafe.ai.evil.test/v1",
+            "http://localhost:11434/v1",
+        ] {
+            assert!(!is_typesafe_endpoint(b), "{b} must not be first-party");
+        }
+        assert!(is_typesafe_endpoint("https://sub.api.typesafe.ai/v1"));
     }
 
     #[test]

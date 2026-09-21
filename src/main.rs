@@ -862,6 +862,7 @@ enum ProviderConfigCmd {
         activate: bool,
     },
     /// Edit every field of an existing profile.
+    #[command(alias = "update")]
     Edit {
         name: String,
         #[arg(long)]
@@ -5869,19 +5870,20 @@ async fn run_menu_sticky() -> Result<()> {
                         // hung stream in one pass doesn't strand the REPL for >15 minutes. If the timeout
                         // fires, the user sees "· skipped" instead of an infinite spinner.
                         const POST_TURN_OVERALL_TIMEOUT_SECS: u64 = 600;
-                        let learning_fut = cancellable_slash_labeled("learning from this turn…", async {
-                            maybe_run_secretary(&history, &http, &base_url, &api_key, &model)
+                        let learning_fut =
+                            cancellable_slash_labeled("learning from this turn…", async {
+                                maybe_run_secretary(&history, &http, &base_url, &api_key, &model)
+                                    .await;
+                                maybe_evolve_persona(&http, &base_url, &api_key, &model).await;
+                                maybe_auto_compact(
+                                    &mut history,
+                                    &http,
+                                    &base_url,
+                                    &api_key,
+                                    &model,
+                                )
                                 .await;
-                            maybe_evolve_persona(&http, &base_url, &api_key, &model).await;
-                            maybe_auto_compact(
-                                &mut history,
-                                &http,
-                                &base_url,
-                                &api_key,
-                                &model,
-                            )
-                            .await;
-                        });
+                            });
                         let learned = match tokio::time::timeout(
                             std::time::Duration::from_secs(POST_TURN_OVERALL_TIMEOUT_SECS),
                             learning_fut,
@@ -8241,7 +8243,7 @@ Commands:
   /init [--force|--status]  index the codebase into a semantic chunk index (SHA-256 incremental, secrets redacted); powers codebase_search + auto per-turn retrieval. --force rebuilds, --status shows state, Esc cancels
   /where             show THIS project's identity: root · zone slug · git executable · where memory/skills/sessions live (also `aizen where`, `aizen zone migrate`)
   /model             list the provider's models (with context windows) + pick one
-  /provider [name]   one-pick switch; `add` creates and `manage` edits/renames/deletes providers
+  /provider [name]   one-pick switch; `add` creates, `manage`/`edit`/`update` edits/renames/deletes providers
   /config            set endpoint + key + model and manage provider profiles
   /memory [query]    show your profile, or search memory; /memory remember <fact> to save
   /persona           pick the character the agent role-plays (list · select · new · clear · delete)
@@ -9726,7 +9728,11 @@ async fn handle_slash(
             }
         }
         "provider" | "providers" => {
-            let selected = if arg.eq_ignore_ascii_case("add") || arg.eq_ignore_ascii_case("manage") {
+            let selected = if arg.eq_ignore_ascii_case("add")
+                || arg.eq_ignore_ascii_case("manage")
+                || arg.eq_ignore_ascii_case("edit")
+                || arg.eq_ignore_ascii_case("update")
+            {
                 let mut cfg = cli_config::load();
                 config_edit_providers(&mut cfg).await.and_then(|_| {
                     cli_config::save(&cfg)?;
@@ -12729,6 +12735,16 @@ async fn prompt_validated_base_url(
             continue;
         }
 
+        if client::is_typesafe_endpoint(&base) {
+            line_bad("TypeSafe AI (api.typesafe.ai) is a System One decision engine, not an OpenAI chat LLM");
+            tui::emit_line(&format!(
+                "    {}",
+                style("It evaluates states via POST /v1/systemone and cannot be used as an Aizen chat provider. See https://docs.typesafe.ai/concepts/system-one").dim()
+            ));
+            suggestion = None;
+            continue;
+        }
+
         let check = spin_while(
             &format!("checking {base}"),
             client::check_endpoint(http, &base, None),
@@ -13492,6 +13508,16 @@ async fn prompt_probed_base_url(
         return Ok(None);
     }
     let url = raw.trim_end_matches('/').to_string();
+    if client::is_typesafe_endpoint(&url) {
+        line_bad(
+            "TypeSafe AI (api.typesafe.ai) is a System One decision engine, not an OpenAI chat LLM",
+        );
+        tui::emit_line(&format!(
+            "    {}",
+            style("It evaluates states via POST /v1/systemone and cannot be used as an Aizen chat provider. See https://docs.typesafe.ai/concepts/system-one").dim()
+        ));
+        return Ok(None);
+    }
     let check = spin_while(
         &format!("checking {url}"),
         client::check_endpoint(http, &url, None),
@@ -16320,6 +16346,19 @@ mod tests {
                 "config",
                 "provider",
                 "edit",
+                "backup",
+                "--base-url",
+                "https://backup-2/v1",
+                "--api-key",
+                "key-2",
+                "--model",
+                "model-c",
+            ],
+            vec![
+                "aizen",
+                "config",
+                "provider",
+                "update",
                 "backup",
                 "--base-url",
                 "https://backup-2/v1",
