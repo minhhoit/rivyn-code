@@ -26,9 +26,15 @@ SHELL := /bin/sh
 
 AIZEN_INSTALL ?= $(HOME)/.aizen
 BIN_DIR := $(AIZEN_INSTALL)/bin
+CARGO_BIN ?= $(HOME)/.cargo/bin
 
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
+
+ifeq ($(UNAME_S),Darwin)
+  DEVELOPER_DIR ?= /Library/Developer/CommandLineTools
+  export DEVELOPER_DIR
+endif
 
 NATIVE :=
 ifeq ($(UNAME_S),Darwin)
@@ -41,7 +47,7 @@ ifeq ($(UNAME_S),Darwin)
   endif
 endif
 
-.PHONY: help setup build build-dense check test fmt clippy lint install install-bin run update clean
+.PHONY: help setup build build-dense check test fmt clippy lint install install-bin run update update-dense replace clean
 
 help:
 	@echo "Aizen targets:"
@@ -51,10 +57,10 @@ help:
 	@echo "  make check        cargo check (fast feedback)"
 	@echo "  make test         cargo test --bin aizen"
 	@echo "  make lint         cargo fmt + cargo clippy"
-	@echo "  make install      build from source and install into $(BIN_DIR)"
-	@echo "  make install-bin  install the prebuilt GitHub release (no toolchain)"
+	@echo "  make install      build from source and install into $(BIN_DIR) and $(CARGO_BIN)"
+	@echo "  make update       rebuild and update local aizen binary (alias: make replace)"
+	@echo "  make update-dense rebuild with 'dense' tier and update local binary"
 	@echo "  make run          cargo run"
-	@echo "  make update       aizen self-update"
 	@echo "  make clean        cargo clean"
 
 setup:
@@ -99,19 +105,37 @@ lint: fmt clippy
 
 install: build
 	@mkdir -p "$(BIN_DIR)"
-	@cp target/release/aizen "$(BIN_DIR)/aizen"
+	@cp -f target/release/aizen "$(BIN_DIR)/aizen"
 	@chmod +x "$(BIN_DIR)/aizen"
 	@echo "aizen installed -> $(BIN_DIR)/aizen"
+	@if [ -d "$(CARGO_BIN)" ]; then \
+		cp -f target/release/aizen "$(CARGO_BIN)/aizen"; \
+		chmod +x "$(CARGO_BIN)/aizen"; \
+		echo "aizen installed -> $(CARGO_BIN)/aizen"; \
+	fi
 	@$(MAKE) --no-print-directory path-hint
-
-install-bin:
-	$(NATIVE) sh install.sh
 
 run:
 	$(NATIVE) cargo run -- $(ARGS)
 
-update:
-	$(NATIVE) "$(BIN_DIR)/aizen" update
+update: install
+	@echo "== Aizen CLI has been updated successfully!"
+	@command -v aizen >/dev/null 2>&1 && aizen --version || "$(BIN_DIR)/aizen" --version
+
+replace: update
+
+update-dense: build-dense
+	@mkdir -p "$(BIN_DIR)"
+	@cp -f target/release/aizen "$(BIN_DIR)/aizen"
+	@chmod +x "$(BIN_DIR)/aizen"
+	@echo "aizen installed -> $(BIN_DIR)/aizen"
+	@if [ -d "$(CARGO_BIN)" ]; then \
+		cp -f target/release/aizen "$(CARGO_BIN)/aizen"; \
+		chmod +x "$(CARGO_BIN)/aizen"; \
+		echo "aizen installed -> $(CARGO_BIN)/aizen"; \
+	fi
+	@echo "== Aizen CLI (dense) has been updated successfully!"
+	@command -v aizen >/dev/null 2>&1 && aizen --version || "$(BIN_DIR)/aizen" --version
 
 clean:
 	$(NATIVE) cargo clean

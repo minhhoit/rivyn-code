@@ -38,23 +38,15 @@ commercial use is allowed.
   cannot be retracted; everything from the relicensing commit onward is Apache-2.0. If you find a
   file still saying PolyForm, it is a leftover — fix it.
 
-## Git remotes — two of them, don't mix them up
+## Git repository
 
 ```
-origin  → https://github.com/dawnofcd/Aizen_agent.git   (PRIVATE — full source, day-to-day work)
-public  → https://github.com/dawnofcd/aizen.git         (PUBLIC — redirects to rivyn-llc/aizen)
+origin  → git@github.com:minhhoit/rivyn-code.git   (canonical custom repository)
 ```
 
-- The **canonical public repo is `rivyn-llc/aizen`** (an org). `dawnofcd/aizen` still resolves via
-  GitHub's redirect, but **write `rivyn-llc/aizen` in all user-facing URLs, install scripts, and
-  code** so nothing depends on a redirect.
-- `dawnofcd/Aizen_agent` is private, so an anonymous fetch of it returns 404. That is expected — it
-  is not a broken URL. **Never put it in user-facing docs**; the README used to tell people to
-  `cargo install --git .../Aizen_agent`, which 404'd for everyone.
-- Release binaries are published to `rivyn-llc/aizen`. `src/features/update.rs` has
-  `DEFAULT_REPO = "rivyn-llc/aizen"` and `aizen update` reads releases from there — keep it aligned
-  with `install.ps1` (`$Repo`) and `install.sh` (`repo=`).
-- Never push to `main` on either remote without being asked. Branch, then push with `-u`.
+- Aizen in this repository is heavily customized and maintained as a standalone distribution (`minhhoit/rivyn-code`).
+- Do not reference, fetch, or pull from upstream/external repositories (such as `dawnofcd`) to prevent overriding customized features.
+- Never push to `main` without being asked. Branch, then push with `-u`.
 
 ## Layout worth knowing
 
